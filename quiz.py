@@ -2,55 +2,58 @@
 
 #importing libraries
 import csv
+import os
 import random
-import difflib #for fuzzy matching
+import difflib
 
-#load the words from csv file
-with open('words.csv', newline='', encoding= 'utf-8') as csvfile:
-    reader = csv.DictReader(csvfile)
-    words = list(reader)
+DATA_DIR = "data"
 
-score = 0
-total_questions = 10 # changeable
-weak_words= [] #store question you got wrong
+def list_categories():
+    files  = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
+    categories = [os.path.splitext(f)[0] for f in files]
+    return categories
 
-def ask_question(word, question_lang, answer_lang):
-    """Ask a question and return True if correct, False if wrong."""
-    answer = input(f"What is the {answer_lang} for '{word[question_lang]}'? ")
+def choose_category():
+    categories = list_categories()
+    print("Choose a category: ")
+    for i, cat in enumerate(categories, 1 ):
+        print(f"{i}. {cat}")
+    while True:
+        choice = input("Enter number: ").strip()
+        if not choice.isdigit():
+            print("Please enter a number.")
+            continue
+        choice_num = int(choice)
+        if 1 <= choice_num <= len(categories):
+            return os.path.join(DATA_DIR, categories[choice_num - 1] + ".csv")
+        else:
+            print(f"Please enter a number between 1 and {len(categories)}.")
 
-    similarity = difflib.SequenceMatcher(None, answer.strip().lower(), word[answer_lang].lower()).ratio()
+def load_flashcards(filename):
+    flashcards = []
+    with open(filename, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # normalize keys (make sure CSV headers match these)
+            flashcards.append({"Irish": row['Irish'], "English": row['English']})
+    return flashcards
 
-    if similarity > 0.8:
-        print("✅ Correct!")
-        return True
-    else:
-        print(f"❌ Wrong. The correct answer is ' {word[answer_lang]}'.")
-        return False
-    
-
-#quiz loop
-for i in range(total_questions): #Ask total no of questions for now
-    word = random.choice(words)
-    
-    #randomly choose quiz direction
-
-    if random.choice([True, False]):
-       q_lang, a_lang = 'Irish', 'English'
-    else:
-        q_lang, a_lang = 'English', 'Irish'
-    
-    if ask_question(word, q_lang, a_lang):
-        score += 1
-    else:
-        weak_words.append((word, q_lang, a_lang))
-
-#revision of weak words
-if weak_words:
-    print(f"\n📚 Let's review the ones you missed:\n")
-    for word, q_lang, a_lang in weak_words:
-        if ask_question(word, q_lang, a_lang):
+def run_flashcards(flashcards):
+    score = 0
+    random.shuffle(flashcards)
+    for card in flashcards:
+        answer = input(f"What is '{card['Irish']}' in English? ").strip().lower()
+        if answer == card['English'].lower():
+            print("✅ Correct!")
             score += 1
-    
+        else:
+            print(f"❌ Wrong. The correct answer was: {card['English']}")
+    print(f"\nFinal Score: {score}/{len(flashcards)}")
 
-    
-print(f"\nFinal score: {score} out of {total_questions + len(weak_words)}.")
+def main():
+    category_file = choose_category()
+    flashcards = load_flashcards(category_file)
+    run_flashcards(flashcards)
+
+if __name__ == "__main__":
+    main()
