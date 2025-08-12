@@ -5,6 +5,8 @@ import csv
 import os
 import random
 import difflib
+import sys
+
 
 DATA_DIR = "data"
 
@@ -38,17 +40,53 @@ def load_flashcards(filename):
             flashcards.append({"Irish": row['Irish'], "English": row['English']})
     return flashcards
 
+
+#quit option
+def quiz_user(flashcards):
+    score = 0
+    answered = 0
+
+    for card in flashcards:
+        answer = input(f"What is the English for '{card['Irish']}'? ")
+
+        cleaned = answer.strip().lower()
+
+        if cleaned in ("quit", "q"):
+            print("\nQuiz ended early.")
+            print(f"Your score: {score}/{answered}")
+            sys.exit()  # <-- This ends the whole program immediately
+
+
+        answered += 1
+
+        if cleaned == english.strip().lower():
+            print("Correct!")
+            score += 1
+        else:
+            print(f"Incorrect. The correct answer was '{english.strip()}'.")
+
+    print(f"\nYour score: {score}/{answered}")
+
+
 def run_flashcards(flashcards):
     score = 0
+    answered = 0
     random.shuffle(flashcards)
     for card in flashcards:
         answer = input(f"What is '{card['Irish']}' in English? ").strip().lower()
+        if answer in ("quit", "q"):
+            print("\nQuiz ended early.")
+            print(f"Your score: {score}/{answered}")
+            return
+        answered += 1
         if answer == card['English'].lower():
             print("✅ Correct!")
             score += 1
         else:
             print(f"❌ Wrong. The correct answer was: {card['English']}")
     print(f"\nFinal Score: {score}/{len(flashcards)}")
+
+
 
 def main():
     category_file = choose_category()
